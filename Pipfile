@@ -8,8 +8,10 @@ python-telegram-bot = "*"
 requests = "*"
 selenium = "*"
 bs4 = "*"
+pytesseract = "*"
+opencv-python = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.9"
+python_version = "3.8.5"

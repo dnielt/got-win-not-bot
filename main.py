@@ -1,3 +1,4 @@
+import config
 import logging
 import re
 from winnings import calculate_winnings
@@ -66,8 +67,7 @@ def done(update, context):
     return ConversationHandler.END
 
 def main():
-    updater = Updater(token="1724997205:AAHvk-UUDH9W1OR2xvktdpQ4VI7VRGRQa-o", 
-                     use_context=True)
+    updater = Updater(token=config.token, use_context=True)
    # updater = Updater(token=token, use_context=True)
     dispatcher = updater.dispatcher
     conv_handler = ConversationHandler(

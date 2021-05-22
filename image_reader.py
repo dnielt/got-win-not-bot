@@ -19,7 +19,7 @@ for i, file in enumerate(files):
     open_img = opening(image)
     results[i] = {"text": pytesseract.image_to_string(open_img)}
 
-
+re.sub("[^0-9 /]", "", test)
 
 actual = {
     0: [[1, 21, 23, 28, 29, 38, 45], 

@@ -42,6 +42,3 @@ def calculate_winnings(input_date, input_numbers):
                         len((set(input_numbers) & set(additional)))]
     #returns ([# matches winning numbers, # matches addl number], # win group)
     return (ticket_win_group, prize_structure.get(str(ticket_win_group)))
-
-test = ([3, 1], 6)
-test2 = ([2, 0], None)

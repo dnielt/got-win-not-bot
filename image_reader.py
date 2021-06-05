@@ -21,7 +21,7 @@ for i, file in enumerate(files):
 
 re.sub("[^0-9 /]", "", test)
 
-actual = {
+actual_results = {
     0: [[1, 21, 23, 28, 29, 38, 45], 
         [10, 15, 21, 23, 24, 40, 43]],
     1: [[5, 17, 20, 36, 40, 41],
@@ -65,6 +65,68 @@ actual = {
         [7, 21, 28, 29, 32, 46],
         [7, 8, 10, 15, 27, 41],
         [10, 12, 33, 37, 39, 44],
-        [3, 5, 12, 22, 24, 46]]
+        [3, 5, 12, 22, 24, 46]],
+    9: [[10, 12, 17, 23, 33, 34],
+        [5, 7, 9, 14, 27, 33],
+        [24, 25, 27, 29, 33, 42],
+        [16, 18, 23, 30, 36, 41],
+        [4, 8, 22, 37, 42, 45],
+        [5, 15, 16, 17, 18, 34]],
+    10:[[3, 12, 27, 44, 45, 49],
+        [1, 6, 11, 21, 30, 34],
+        [19, 23, 24, 26, 31, 44],
+        [2, 4, 17, 29, 32, 43],
+        [5, 10, 13, 21, 36, 46],
+        [3, 9, 11, 15, 17, 37]]
     }
 
+
+
+def func_caller(func_list, object):
+    result = object
+    for i in func_list:
+        result = i(result)
+    return result
+
+def f1(i):
+    return i+2
+
+def f2(i):
+    return i*3
+
+test = [f1, f2]
+test2 = [opening, canny]
+image = cv2.imread(files[0])
+
+func_caller(test2, image)
+
+
+#test
+# importing cv2 
+import cv2 
+import os
+
+# path 
+path = r"/mnt/c/Users/Daniel/Desktop/2021-05-22 telegram bot - GWN/images"
+
+os.chdir("/mnt/c/Users/Daniel/Desktop/2021-05-22 telegram bot - GWN/images")
+os.chdir("C:/Users/Daniel/Desktop/2021-05-22 telegram bot - GWN/images")
+files = os.listdir()
+results = {}
+
+# Reading an image in default mode
+image = cv2.imread(files[0])
+  
+# Window name in which image is displayed
+window_name = 'image'
+
+# Using cv2.imshow() method 
+# Displaying the image 
+cv2.imshow(window_name, image)
+  
+#waits for user to press any key 
+#(this is necessary to avoid Python kernel form crashing)
+cv2.waitKey(0) 
+  
+#closing all open windows 
+cv2.destroyAllWindows() 

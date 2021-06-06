@@ -18,3 +18,4 @@ RUN apt-get update && apt-get install -y \
 # tar -zxvf google-cloud-sdk-343.0.0-linux-x86_64.tar.gz
 # export GOOGLE_APPLICATION_CREDENTIALS="/mnt/c/users/daniel/desktop/2021-05-22 telegram bot - GWN/google-api-key/google-key.json"
 # ./google-cloud-sdk/bin/gcloud init
+#pip install --upgrade google-cloud-vision

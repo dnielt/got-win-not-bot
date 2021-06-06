@@ -10,6 +10,7 @@ selenium = "*"
 bs4 = "*"
 pytesseract = "*"
 opencv-python = "*"
+google-cloud-vision = "*"
 
 [dev-packages]
 

@@ -2,7 +2,14 @@ import config
 import logging
 import re
 from winnings import calculate_winnings
-from telegram import ReplyKeyboardMarkup, Update, ReplyKeyboardRemove
+from gcloud_vision import read_image
+from telegram import (
+    ReplyKeyboardMarkup, 
+    Update, 
+    ReplyKeyboardRemove, 
+    InlineKeyboardButton, 
+    InlineKeyboardMarkup
+)
 from telegram.ext import (
     Updater,
     CommandHandler,
@@ -11,6 +18,7 @@ from telegram.ext import (
     ConversationHandler,
     CallbackContext,
 )
+
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                      level=logging.INFO)
 
@@ -18,13 +26,31 @@ logger = logging.getLogger(__name__)
 
 #token = os.environ['TELEGRAM_TOKEN']
 
-DATE, MSG_TICKET_NUMBERS = range(2)
+CHOOSE_INPUT, DATE, MSG_TICKET_NUMBERS = range(3)
 
 def start(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, 
                              text="Hi! Welcome to daniel's toto winnings"
                              "calculator. Send me the ticket date, in the format" 
                              "<yyyy-mm-dd>.")
+    return CHOOSE_INPUT
+
+def choose_input(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, 
+                             text="Choose an input type.\n"
+                             "1) Photo of toto slip.\n" 
+                             "2) Text input.")
+    keyboard = [
+        [
+            InlineKeyboardButton("1) Photo of toto slip", callback_data='1'),
+            InlineKeyboardButton("2) Text input", callback_data='2'),
+        ],
+        [InlineKeyboardButton("Option 3", callback_data='3')],
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    update.message.reply_text('Please choose:', reply_markup=reply_markup)
     return DATE
 
 def date(update, context):
@@ -68,11 +94,12 @@ def done(update, context):
 
 def main():
     updater = Updater(token=config.token, use_context=True)
-   # updater = Updater(token=token, use_context=True)
+    # updater = Updater(token=token, use_context=True)
     dispatcher = updater.dispatcher
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
+            CHOOSE_INPUT: [MessageHandler(FIlters.text, choose_input)],
             DATE: [MessageHandler(Filters.text, date)],
             MSG_TICKET_NUMBERS: [MessageHandler(Filters.text, msg_ticket_numbers)]
             },

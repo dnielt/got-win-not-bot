@@ -20,7 +20,10 @@ from bs4 import BeautifulSoup
 options = webdriver.ChromeOptions()
 options.add_argument('--incognito')
 options.add_argument("--headless")
-driver = webdriver.Chrome("./chromedriver", options=options)
+PATH =  os.path.join("c:", os.sep, "Program Files (x86)", "chromedriver.exe")
+# driver = webdriver.Chrome("./chromedriver", options=options)
+driver = webdriver.Chrome(PATH, options=options)
+
 
 try:
     with open("data.txt") as file:

@@ -33,43 +33,47 @@ def read_image(path_to_file):
     # Performs label detection on the image file
     response = client.text_detection(image=image)
     text = response.text_annotations
-    
-    # print('Text:')
-    # for i in text:
-        # print(i.description)
-    
-    test = text[0].description
-    lines = test.split("\n")
+
+    #Isolate whole text, which is stored in text[0]
+    temp = text[0].description
+    lines = temp.split("\n")
     
     result = []
     date = []
     
     for line in lines:
+        #Find relevant rows with at least 5 sets of XX characters
         if re.findall("([0-9]{2} ){5,}", line):
             result.append(line)
+        #Find draw date
         elif re.findall("(DRAW: [A-Z]{3} ([0-9]{2}\/[0-9]{2}\/[0-9]{2}))", line):
             date.append(line)
     
-    # result
-    """
-    ['A. 03 12 27 44 45 49', 'B.01 06 11 21 30 34', 'C. 19 23 24 26 31 44', 'D.02 04 17 29 32 43', 'E. 05 10 13 21 36 46', 'F. 03 09 11 15 17 37'] 
-    into
-    "03 12 27 \n12 12 31"
-    """
     result2 = []
     for string in result:
-        result2.append(re.sub("(^[A-Z]\.( )?)", "", string))
+        result2.append(re.sub("(^[A-Za-z][\.-]( )?)", "", string))
     result3 = "\n".join(result2)
-    # test_numbers = [2, 19, 22, 30, 31, 32, 5]
-    
-    
-    # date
-    #['DRAW: THU 20/05/21']
-    # ticket_date = date_reader("2021-04-29")
+
     date = re.sub("[^0-9\/]", "", date[0])
     date = datetime.strptime(date, "%d/%m/%y")
     date = date.strftime("%Y-%m-%d")
     
-    return {"date": date, "result": result}
+    return {"date": date, "result": result, "parsed": result3}
 
 
+def parse_raw_numbers(ticket_numbers):
+    """
+    Parse string of text, into list/list of lists of ticket numbers
+    "1 2 3 4 5 6\n1 2 3 4 5 6" into
+    [[1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6]]
+    """
+    #if there are multiple lines in the raw text, then split the list
+    if re.findall("\n", ticket_numbers):
+        ticket_numbers = re.split("\n", ticket_numbers)
+        ticket_numbers = [re.split(" ", i) for i in ticket_numbers]
+    
+    #if only a single line, no need to split the string
+    else:
+        ticket_numbers = re.split(" ", ticket_numbers)
+    
+    return ticket_numbers

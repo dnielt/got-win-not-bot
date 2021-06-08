@@ -1,5 +1,4 @@
 import json
-# import pandas as pd
 import re
 from datetime import date, datetime
 
@@ -7,7 +6,16 @@ def date_reader(my_date):
     temp = datetime.strptime(my_date, "%Y-%m-%d")
     return date.strftime(temp, "%a, %d %b %Y")
 
+#TOTO prize structure
+"""
+Keys [i, j]
+i represents to number of oridinary numbers matched
+j represents the additional number matched
 
+Value i represents the Prize Group
+
+E.g. Group 7 wins $10
+"""
 prize_structure = {"[3, 0]": 7,
                    "[3, 1]": 6,
                    "[4, 0]": 5,
@@ -16,7 +24,7 @@ prize_structure = {"[3, 0]": 7,
                    "[5, 1]": 2,
                    "[6, 0]": 1}
 
-
+#Use existing data if available
 try:
     with open("data.txt") as file:
        results = json.load(file)
@@ -40,5 +48,4 @@ def calculate_winnings(input_date, input_numbers):
     
     ticket_win_group = [len(set(input_numbers) & set(winning_numbers)),
                         len((set(input_numbers) & set(additional)))]
-    #returns ([# matches winning numbers, # matches addl number], # win group)
     return (ticket_win_group, prize_structure.get(str(ticket_win_group)))

@@ -2,7 +2,7 @@ import config
 import logging
 import re
 from winnings import calculate_winnings
-from gcloud_vision import read_image
+from gcloud_vision import read_image, parse_raw_numbers
 from telegram import (
     ReplyKeyboardMarkup, 
     Update, 
@@ -28,57 +28,65 @@ logger = logging.getLogger(__name__)
 TEXT_INPUT1, TEXT_INPUT2, TEXT_CHECK1, RESULTS, REPEAT) = range(9)
 
 def start(update, context):
-    reply_keyboard = [['Image of TOTO slip'], ['Text input']]
+    reply_keyboard = [["Photo of TOTO slip", "Text input"]]
     update.message.reply_text(
-        "Hello! Welcome to the GOT-WIN-ANOT bot."
-        "How would you like to check your TOTO winnings?\n",
+        "Hello! Welcome to the GOT-WIN-ANOT bot.\n"
+        "How would you like to check your TOTO winnings?\n"
+        "Enter /exit at any time to quit.",
         reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))    
     return CHOOSE_INPUT
 
 def photo_upload(update, context):
-    """Stores the photo and asks for a location."""
+    """User to upload photo"""
     user = update.message.from_user
     update.message.reply_text(
-        "Please send me a photo of your TOTO slip!"
-        "Or send /text if you decide to use text input instead.",
+        "Please send me a photo of your TOTO slip!\n"
+        "Or send /text if you decide to use text input instead.\n"
+        "\nPlease note that this only works for System 6 tickets for now.",
         reply_markup=ReplyKeyboardRemove(),
     )
     return PHOTO_CHECK1
 
 def photo_check1(update, context):
     """
-    To-do:
-    Use read_image() function to read uploaded photo.
-    Store draw date and draw numbers in context.
-    Return the draw date for user to edit, or press Y to confrim.
-    
-    Update draw date using user input if required.
-    
-    <yyyy-mm-dd>
-    
-    Send user to photo_check2.
+    Use OCR to retrieve text in photo.
     """
     user = update.message.from_user
     photo_file = update.message.photo[-1].get_file()
     photo_file.download("user_photo.jpg")
-    logger.info("Photo of %s: %s", user.first_name, "user_photo.jpg")
+    image = read_image("user_photo.jpg")
+    context.user_data['ticket_date'] = date = image['date']
+    context.user_data['parsed'] = parsed = image['parsed']
+    
+    # logger.info("Photo of %s: %s", user.first_name, "user_photo.jpg", test)
     update.message.reply_text(
         "Great! Now check to see if the draw date and numbers are accurate.\n"
-        "Send /text if you want to input text instead.")
+        "Send /text if you want to input text instead.\n")
+    update.message.reply_text(f"Draw date: {date}\n")
+    update.message.reply_text(f"Numbers: {image['result']}\n")
+
+    reply_keyboard = [["Next", "Re-send image"]]
+    update.message.reply_text(f"Press next to see results, or re-send image.",
+                              reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
     return PHOTO_CHECK2
 
 def photo_check2(update, context):
     """
-    To-do:
-    Return draw numbers from context for user to edit, or press Y to confirm.
-    
-    Update draw numbers using user input if required.
-    
-    Enter the ticket number(s) separated by space.
-    Enter multiple tickets across multiple lines.
-    
-    Send user to results.
+    User to edit numbers if necessary.
     """
+    ticket_numbers = context.user_data["parsed"]
+    logger.info(f"Received plain text:\n{ticket_numbers}")
+    ticket_numbers = parse_raw_numbers(ticket_numbers)
+    if isinstance(ticket_numbers[0], list):
+        final = [calculate_winnings(context.user_data["ticket_date"], i)
+                 for i in ticket_numbers]
+    else:
+        final = [calculate_winnings(context.user_data["ticket_date"], ticket_numbers)]
+    context.user_data["final"] = final
+    reply_keyboard = [["Next"]]
+    update.message.reply_text(f"You entered: {ticket_numbers}.\n"
+                              f"Press next to see results.\n",
+                              reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
     return RESULTS
 
 def text_input1(update, context):
@@ -94,46 +102,37 @@ def text_input2(update, context):
     return TEXT_CHECK1
 
 def text_check1(update, context):
-    """received as 1 2 3 4 5 6, 1 2 3 4 5 6"""
+    """"""
     ticket_numbers = update.message.text
-    logger.info(f"Received plain text:\n{ticket_numbers}")
-    if re.findall("\n", ticket_numbers):
-        ticket_numbers = re.split("\n", ticket_numbers)
-        ticket_numbers = [re.split(" ", i) for i in ticket_numbers]
-    else:
-        ticket_numbers = re.split(" ", ticket_numbers)
-    # context.user_data["ticket_numbers"] = ticket_numbers
+    logger.info(f"\nReceived plain text:\n{ticket_numbers}")
+    ticket_numbers = parse_raw_numbers(ticket_numbers)
+    logger.info(f"\nParsed numbers:\n{ticket_numbers}")
     if isinstance(ticket_numbers[0], list):
         final = [calculate_winnings(context.user_data["ticket_date"], i)
                  for i in ticket_numbers]
     else:
         final = [calculate_winnings(context.user_data["ticket_date"], ticket_numbers)]
-    # winnings = calculate_winnings(context.user_data["ticket_date"], final)
     context.user_data["final"] = final
+    reply_keyboard = [["Next", "Re-enter numbers"]]
     update.message.reply_text(f"You entered: {ticket_numbers}.\n"
-                              f"Send any key to continue.")    
+                              f"Press next to see results, or re-enter numbers.\n",
+                              reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
     return RESULTS
 
 def results(update, context):
     """
-    To-do:
-    Pull draw date, draw numbers from context.
-    Check against data.
-    
     Return winnings.
     """
     final = context.user_data["final"]
     num_matches = [i[0] for i in final]
     final_group = [i[1] for i in final]
-    context.bot.send_message(chat_id = update.effective_chat.id,
-                             text= f"You won {final_group}\n"
-                             f"Numbers matched: (ordinary numbers, additional)\n"
-                             f"{num_matches}")
-    
+    update.message.reply_text(f"You won Group:{final_group}\n"
+                              f"Numbers matched: (ordinary numbers, additional)\n"
+                              f"{num_matches}")
     return ConversationHandler.END
 
-def done(update, context):
-    update.message.reply_text("done")
+def exit(update, context):
+    update.message.reply_text("exit")
     return ConversationHandler.END
 
 def main():
@@ -144,24 +143,32 @@ def main():
         entry_points=[CommandHandler("start", start)],
         states={
             CHOOSE_INPUT: [
-                MessageHandler(Filters.regex("^Image"), photo_upload),
-                MessageHandler(Filters.regex("^Text"), text_input1)],
+                MessageHandler(Filters.regex("^Photo"), photo_upload),
+                MessageHandler(Filters.regex("^Text"), text_input1),
+                CommandHandler("exit", exit)],
             PHOTO_CHECK1: [
                 MessageHandler(Filters.photo, photo_check1), 
-                CommandHandler("text", text_input1)],
+                CommandHandler("text", text_input1),
+                CommandHandler("exit", exit)],
             PHOTO_CHECK2: [
-                MessageHandler(Filters.text, photo_check2),
-                CommandHandler("text", text_input1)],
+                MessageHandler(Filters.regex("^Next"), photo_check2),
+                MessageHandler(Filters.regex("^Re-send"), text_input1),
+                CommandHandler("exit", exit)],
             TEXT_INPUT1: [
-                MessageHandler(Filters.text, text_input1)],
+                MessageHandler(Filters.text, text_input1),
+                CommandHandler("exit", exit)],
             TEXT_INPUT2: [
-                MessageHandler(Filters.text, text_input2)],
+                MessageHandler(Filters.text, text_input2),
+                CommandHandler("exit", exit)],
             TEXT_CHECK1: [
-                MessageHandler(Filters.text, text_check1)],
+                MessageHandler(Filters.text, text_check1),
+                CommandHandler("exit", exit)],
             RESULTS: [
-                MessageHandler(Filters.text, results)]
+                MessageHandler(Filters.regex("^Next"), results),
+                MessageHandler(Filters.regex("^Re-enter"), text_input1),
+                CommandHandler("exit", exit)]
             },
-            fallbacks=[MessageHandler(Filters.text, done)],
+            fallbacks=[MessageHandler(Filters.text, exit)],
         )
     
     dispatcher.add_handler(conv_handler)

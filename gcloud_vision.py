@@ -7,6 +7,7 @@ from datetime import datetime
 from google.cloud import vision
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="/mnt/c/users/daniel/desktop/2021-05-22 telegram bot - GWN/google-api-key/google-key.json"
+#os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="./google-key.json"
 
 def test():
     return read_image(

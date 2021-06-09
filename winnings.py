@@ -3,8 +3,11 @@ import re
 from datetime import date, datetime
 
 def date_reader(my_date):
-    temp = datetime.strptime(my_date, "%Y-%m-%d")
-    return date.strftime(temp, "%a, %d %b %Y")
+    try:
+        temp = datetime.strptime(my_date, "%Y-%m-%d")
+        return date.strftime(temp, "%a, %d %b %Y")
+    except:
+        return None
 
 #TOTO prize structure
 """
@@ -41,11 +44,14 @@ def calculate_winnings(input_date, input_numbers):
     ticket_date = date_reader(input_date)
     input_numbers = [int(i) for i in input_numbers]
     
-    winning_numbers = results.get(ticket_date)["winning_numbers"]
-    winning_numbers = [int(i) for i in winning_numbers]
-    additional = results.get(ticket_date)["additional_number"]
-    additional = [int(i) for i in additional]
-    
+    try:
+        winning_numbers = results.get(ticket_date)["winning_numbers"]
+        winning_numbers = [int(i) for i in winning_numbers]
+        additional = results.get(ticket_date)["additional_number"]
+        additional = [int(i) for i in additional]
+    except:
+        return None
+        
     ticket_win_group = [len(set(input_numbers) & set(winning_numbers)),
                         len((set(input_numbers) & set(additional)))]
     return (ticket_win_group, prize_structure.get(str(ticket_win_group)))

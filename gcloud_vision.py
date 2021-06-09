@@ -55,9 +55,12 @@ def read_image(path_to_file):
         result2.append(re.sub("(^[A-Za-z][\.-]( )?)", "", string))
     result3 = "\n".join(result2)
 
-    date = re.sub("[^0-9\/]", "", date[0])
-    date = datetime.strptime(date, "%d/%m/%y")
-    date = date.strftime("%Y-%m-%d")
+    try:
+        date = re.sub("[^0-9\/]", "", date[0])
+        date = datetime.strptime(date, "%d/%m/%y")
+        date = date.strftime("%Y-%m-%d")
+    except:
+        date = None
     
     return {"date": date, "result": result, "parsed": result3}
 

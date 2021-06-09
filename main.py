@@ -27,6 +27,8 @@ logger = logging.getLogger(__name__)
 (CHOOSE_INPUT, PHOTO_UPLOAD, PHOTO_CHECK1, PHOTO_CHECK2, 
 TEXT_INPUT1, TEXT_INPUT2, TEXT_CHECK1, RESULTS, REPEAT) = range(9)
 
+DATE_PATTERN = "^(20[012][0-9])\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$"
+
 def start(update, context):
     reply_keyboard = [["Photo of TOTO slip", "Text input"]]
     update.message.reply_text(
@@ -95,8 +97,9 @@ def text_input1(update, context):
     return TEXT_INPUT2
     
 def text_input2(update, context):
-    context.user_data["ticket_date"] = update.message.text
-    update.message.reply_text(f"You entered: {update.message.text}.\n"
+    if re.match(DATE_PATTERN, update.message.text):
+        context.user_data["ticket_date"] = update.message.text
+    update.message.reply_text(f"You entered: {context.user_data['ticket_date']}.\n"
                               f"Now enter the ticket number(s) separated by space.\n"
                               f"Enter multiple tickets across multiple lines.")
     return TEXT_CHECK1
@@ -128,7 +131,8 @@ def results(update, context):
     final_group = [i[1] for i in final]
     update.message.reply_text(f"You won Group:{final_group}\n"
                               f"Numbers matched: (ordinary numbers, additional)\n"
-                              f"{num_matches}")
+                              f"{num_matches}\n"
+                              f"Type /start to restart.")
     return ConversationHandler.END
 
 def exit(update, context):
@@ -152,17 +156,25 @@ def main():
                 CommandHandler("exit", exit)],
             PHOTO_CHECK2: [
                 MessageHandler(Filters.regex("^Next"), photo_check2),
-                MessageHandler(Filters.regex("^Re-send"), text_input1),
+                MessageHandler(Filters.regex("^Re-send"), photo_upload),
                 CommandHandler("exit", exit)],
             TEXT_INPUT1: [
                 MessageHandler(Filters.text, text_input1),
                 CommandHandler("exit", exit)],
             TEXT_INPUT2: [
-                MessageHandler(Filters.text, text_input2),
-                CommandHandler("exit", exit)],
+                #Regular expression to detect yyyy-mm-dd pattern
+                MessageHandler(Filters.regex(DATE_PATTERN), text_input2),
+                CommandHandler("exit", exit),
+                #If any other input, re-enter date
+                MessageHandler(Filters.text, text_input1)],
             TEXT_CHECK1: [
-                MessageHandler(Filters.text, text_check1),
-                CommandHandler("exit", exit)],
+                CommandHandler("exit", exit),
+                #Regular expression to detect xx xx xx xx xx xx\n pattern
+                MessageHandler(Filters.regex(
+                    "^([0][1-9]|[1-4][0-9])(( )([0][1-9]|[1-4][0-9])($|\n)*){5,}"), text_check1),
+                #If any other input, re-enter date
+                # MessageHandler(Filters.regex("[^0-9 \n]"),text_input2),
+                MessageHandler(Filters.text, text_input2)],
             RESULTS: [
                 MessageHandler(Filters.regex("^Next"), results),
                 MessageHandler(Filters.regex("^Re-enter"), text_input1),

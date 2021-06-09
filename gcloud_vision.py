@@ -52,7 +52,8 @@ def read_image(path_to_file):
     
     result2 = []
     for string in result:
-        result2.append(re.sub("(^[A-Za-z][\.-]( )?)", "", string))
+        # result2.append(re.sub("(^[A-Za-z][\.-]( )?)", "", string))
+        result2.append(re.sub("^.{0,3}([0-9]{2} )", "\1", string))
     result3 = "\n".join(result2)
 
     try:
